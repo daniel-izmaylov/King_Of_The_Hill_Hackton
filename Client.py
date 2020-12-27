@@ -1,4 +1,6 @@
 from socket import *
+from pynput.keyboard import Key, Listener
+import time
 
 
 
@@ -23,6 +25,18 @@ def open_udp_client():
 
 
 def open_tcp_client(port=13117,team_name="A"):
+    def in_game():
+        with Listener(
+                on_press=on_press,
+               ) as listener:
+            listener.join()
+
+    def on_press(key):
+        print('{0} pressed'.format(
+            key))
+        if start_time + 2 <= time.time(): #todo change 2 to 10
+            return False
+
     server_address=('127.1.0.4',port)
     # server_address=('127.1.0.4',13117)
     clientSocket=socket(AF_INET,SOCK_STREAM)
@@ -32,6 +46,14 @@ def open_tcp_client(port=13117,team_name="A"):
     clientSocket.send(sentence)
     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
     print(recieve_from_server.decode())
+    start_time=time.time()
+    in_game()
+
+
+
+
+
+
 
 
 def open_tcp_client2(port=13117,team_name="B"):
@@ -67,3 +89,5 @@ def open_tcp_client4(port=13117,team_name="D"):
     clientSocket.send(sentence)
     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
     # print(recieve_from_server)
+
+
