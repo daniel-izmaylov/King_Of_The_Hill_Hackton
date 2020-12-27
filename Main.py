@@ -1,6 +1,13 @@
+import random
 from multiprocessing import Process
 from socket import *
 import time
+import Server
+from pynput import keyboard
+from pynput.keyboard import Key, Listener
+
+from Client import open_udp_client, open_tcp_client, open_tcp_client2, open_tcp_client3, open_tcp_client4
+
 
 def UdpBrodcast():
     serverPort = 13117
@@ -16,29 +23,37 @@ def UdpBrodcast():
 
 
 
-def open_udp_client():
-    client_socket=socket(AF_INET,SOCK_DGRAM)
-    ip = '127.1.0.4'
-    port=13117
-    tmp= (ip,port)
-    # message=str.encode("let me in")
-    message=str.encode("let me in")
-    # print(message)
-    # message=0101
-    client_socket.sendto(message,tmp)
 
-    # client_socket.sendto(message,ip,port)
-    modifiedMessage,serverAddress=client_socket.recvfrom(2048)
-    print(modifiedMessage.decode())
-    client_socket.close()
-    return serverAddress
+
+def on_press(key):
+    print('{0} pressed'.format(
+        key))
+
+def on_release(key):
+    print('{0} release'.format(
+        key))
+    if key == Key.esc:
+        # Stop listener
+        return False
 
 
 
 
 
 if __name__ == '__main__':
-    p_S = Process(target=UdpBrodcast)
+    # with Listener(
+    #         on_press=on_press) as listener:
+    #     listener.join()
+    #     keyboard.unhook_all()
+    p_S = Process(target=Server.TCP_Connection)
     p_S.start()
-    p_C = Process(target=open_udp_client)
+    p_C = Process(target=open_tcp_client)
     p_C.start()
+    p_C = Process(target=open_tcp_client2)
+    p_C.start()
+    p_C = Process(target=open_tcp_client3)
+    p_C.start()
+    time.sleep(10)
+    p_C = Process(target=open_tcp_client4)
+    p_C.start()
+
