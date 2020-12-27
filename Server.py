@@ -1,5 +1,6 @@
 import time
 from socket import *
+# import socket
 import random
 
 
@@ -46,6 +47,27 @@ def TCP_Connection():
     WS= WelcomeString(group_1,group_2)
     # print(WS)
     broadcast(connection_dict,WS)
+
+    score_dict={"group_1":0, "group_2":0}
+    print(score_dict)
+    # End_time=time.time()+2 #TODO: change it to 10
+    serverSocket.settimeout(2) #TODO: CHANGE TO 10
+    try:
+        while True:
+            connectionSocket, addr = serverSocket.accept()
+            sentence = connectionSocket.recv(1024)
+            score_dict[connection_dict[connectionSocket]]+=1
+    except timeout:
+        print("The Score is:",score_dict)
+
+
+    # while time.time()<End_time:
+    #     connectionSocket, addr = serverSocket.accept()
+    #     sentence = connectionSocket.recv(1024)
+    #     score_dict[connection_dict[connectionSocket]]+=1
+    # print("The Score is:",score_dict)
+
+
 
 def partition( list_in, n ):
     random.shuffle(list_in)

@@ -56,6 +56,7 @@ def open_tcp_client(port=13117,team_name="A"):
 
 
 
+
 def open_tcp_client2(port=13117,team_name="B"):
     server_address=('127.1.88.5',port)
     # server_address=('127.1.0.4',13117)
