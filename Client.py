@@ -10,4 +10,5 @@ def open_udp_client():
     modifiedMessage,serverAddress=client_socket.recvfrom(2048)
     print(modifiedMessage)
     clientSocket.close()
+    return serverAddress
 #def Create_Client():
