@@ -34,20 +34,33 @@ def open_tcp_client(port=13117,team_name="A"):
     def on_press(key):
         print('{0} pressed'.format(
             key))
+        clientSocket.sendall(str(key).encode())
         if start_time + 2 <= time.time(): #todo change 2 to 10
+            print("time Out")
             return False
 
-    server_address=('127.1.0.4',port)
+    server_address=(('127.0.0.1',port))
     # server_address=('127.1.0.4',13117)
     clientSocket=socket(AF_INET,SOCK_STREAM)
     clientSocket.connect(server_address)
+    print("We are here")
     sentence=str.encode(team_name+"\n")
     # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.send(sentence)
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+    clientSocket.sendall(sentence)
+    print("We sent somting")
+
+    # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+    while True:
+        recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+        # print("Stuck")
+        if  recieve_from_server.decode()!="":
+            break  # no more data coming in, so break out of the while loop
+        # data.append(datachunk)  # add chunk to your already collected data
+
     print(recieve_from_server.decode())
     start_time=time.time()
     in_game()
+    return
 
 
 
@@ -56,39 +69,39 @@ def open_tcp_client(port=13117,team_name="A"):
 
 
 
+#
+# def open_tcp_client2(port=13117,team_name="B"):
+#     server_address=('127.1.88.5',port)
+#     # server_address=('127.1.0.4',13117)
+#     clientSocket=socket(AF_INET,SOCK_STREAM)
+#     clientSocket.connect(server_address)
+#     sentence=str.encode(team_name+"\n")
+#     # sentence=str.encode("OFEK IS KING"+"\n")
+#     clientSocket.send(sentence)
+#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+#     # print(recieve_from_server)
+#
+# def open_tcp_client3(port=13117,team_name="C"):
+#     server_address=('127.1.88.5',port)
+#     # server_address=('127.1.0.4',13117)
+#     clientSocket=socket(AF_INET,SOCK_STREAM)
+#     clientSocket.connect(server_address)
+#     sentence=str.encode(team_name+"\n")
+#     # sentence=str.encode("OFEK IS KING"+"\n")
+#     clientSocket.send(sentence)
+#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+#     # print(recieve_from_server)
+#
+#
+# def open_tcp_client4(port=13117,team_name="D"):
+#     server_address=('127.1.88.5',port)
+#     # server_address=('127.1.0.4',13117)
+#     clientSocket=socket(AF_INET,SOCK_STREAM)
+#     clientSocket.connect(server_address)
+#     sentence=str.encode(team_name+"\n")
+#     # sentence=str.encode("OFEK IS KING"+"\n")
+#     clientSocket.send(sentence)
+#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+#     # print(recieve_from_server)
 
-def open_tcp_client2(port=13117,team_name="B"):
-    server_address=('127.1.88.5',port)
-    # server_address=('127.1.0.4',13117)
-    clientSocket=socket(AF_INET,SOCK_STREAM)
-    clientSocket.connect(server_address)
-    sentence=str.encode(team_name+"\n")
-    # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.send(sentence)
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    # print(recieve_from_server)
-
-def open_tcp_client3(port=13117,team_name="C"):
-    server_address=('127.1.88.5',port)
-    # server_address=('127.1.0.4',13117)
-    clientSocket=socket(AF_INET,SOCK_STREAM)
-    clientSocket.connect(server_address)
-    sentence=str.encode(team_name+"\n")
-    # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.send(sentence)
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    # print(recieve_from_server)
-
-
-def open_tcp_client4(port=13117,team_name="D"):
-    server_address=('127.1.88.5',port)
-    # server_address=('127.1.0.4',13117)
-    clientSocket=socket(AF_INET,SOCK_STREAM)
-    clientSocket.connect(server_address)
-    sentence=str.encode(team_name+"\n")
-    # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.send(sentence)
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    # print(recieve_from_server)
-
-
+open_tcp_client()
