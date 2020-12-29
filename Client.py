@@ -1,3 +1,4 @@
+import select
 from socket import *
 from pynput.keyboard import Key, Listener
 import time
@@ -30,41 +31,45 @@ def open_tcp_client(port=13117,team_name="A"):
                 on_press=on_press,
                ) as listener:
             listener.join()
+
     def on_press(key):
         print('{0} pressed'.format(
             key))
         clientSocket.send(str(key).encode())
+        if(str(key) not in Pressed_keys):
+            Pressed_keys[str(key)]=0
+        Pressed_keys[str(key)]+=1
         if start_time + 2 <= time.time(): #todo change 2 to 10
             return False
-
+    print("Trying to connect to server started...")
+    print("******************")
+    print("Messages are traveling in light speed to make this game work")
+    print("******************")
+    Pressed_keys={}
     server_address=(('127.0.0.1',port))
     # server_address=('127.1.0.4',13117)
     clientSocket=socket(AF_INET,SOCK_STREAM)
     clientSocket.connect(server_address)
-    print("We are here")
+    print("Connected to server address: ", str(server_address))
     sentence=str.encode(team_name+"\n")
-    # sentence=str.encode("OFEK IS KING"+"\n")
     clientSocket.send(sentence)
-    print("We sent somting")
-
-    # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    while True:
-        recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-        # print("Stuck")
-        if  recieve_from_server.decode()!="":
-            break  # no more data coming in, so break out of the while loop
-        # data.append(datachunk)  # add chunk to your already collected data
-
+    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
     print(recieve_from_server.decode())
     start_time=time.time()
+
     in_game()
-    print("blabla")
-    #while True:
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    print("Stuck")
-        #if  recieve_from_server.decode()!="":
-         #   break  # no more data coming in, so break out of the while loop
-    print(recieve_from_server.decode())
+
+    print("\n-=Times Up=-\n")
+
+    print("Good Job you Pressed {} Keys this game.".format(sum(Pressed_keys.values())))
+    print("The most frequent key pressed was:",max(Pressed_keys, key=lambda k: Pressed_keys[k]))
+    print("Waiting for Results...")
+    while (True):
+            recieve_from_server=clientSocket.recv(1024)
+            if (recieve_from_server!=""):
+                print(recieve_from_server.decode())
+                break
+            print("Stuck")
 
     return
 
