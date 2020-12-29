@@ -3,17 +3,51 @@ import time
 from socket import *
 # import socket
 import random
-from threading import Thread
 
-
+from threading import Thread, Lock
 class Server:
     def __init__(self):
         self.groups_dict={}
         self.connection_dict={}
         self.groups_list=[]
         self.score_dict={"group_1":0, "group_2":0}
+        self.num_clients=0
+        self.mutex_num_of_clients=Lock()
+        self.mutex_groups_dict=Lock()
+        self.timer=0
+        self.mutex_partition=Lock()
+        self.partisionReady=False
+    def client_thread(self, conn, ip, port):
+        self.mutex_num_of_clients.locked()
+        client_number=-1
+        if(self.num_clients==0):
+            self.num_clients+=1
+            self.timer = time.time() + 2  # TODO: change it back to 10 sec
+            client_number=0
+        sentence = conn.recv(1024)
+        self.groups_list.append(sentence.decode().strip())
+        self.connection_dict[conn] = sentence.decode().strip()
 
-    def client_thread(self, conn, ip, port, MAX_BUFFER_SIZE=4096):
+        #unlock mutex
+        self.mutex_num_of_clients.unlocked()
+        time.sleep(time.time()-self.timer)
+
+
+        if(client_number==0):
+            group_1, group_2 = self.partition(self.groups_list, 2)
+            self.groups_dict["group_1"] = group_1
+            self.groups_dict["group_2"] = group_2
+            self.partisionReady=True
+
+        while not self.partisionReady:
+            print("f")
+
+
+
+        WS = WelcomeString(self.groups_dict["group_1"] , self.groups_dict["group_2"])
+        conn.send(str.encode(WS))
+
+
         return
 
     def start_server(self):
