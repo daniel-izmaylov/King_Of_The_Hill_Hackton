@@ -3,7 +3,57 @@ import time
 from socket import *
 # import socket
 import random
+from threading import Thread
 
+
+class Server:
+    def __init__(self):
+        self.groups_dict={}
+        self.connection_dict={}
+        self.groups_list=[]
+        self.score_dict={"group_1":0, "group_2":0}
+
+    def client_thread(self, conn, ip, port, MAX_BUFFER_SIZE=4096):
+        return
+
+    def start_server(self):
+        serverSocket = socket(AF_INET, SOCK_STREAM)
+        serverSocket.setblocking(True)
+        serverPort = 13117
+        serverSocket.bind(('', serverPort))
+        serverSocket.listen()
+        while True:
+            connectionSocket, addr = serverSocket.accept()
+            ip, port = str(addr[0]), str(addr[1])
+
+            try:
+                Thread(target=self.client_thread, args=(connectionSocket, ip, port)).start()
+            except:
+                print("bb")
+
+        return
+
+    def broadcast(self,dict, messeage):
+        for client in dict.keys():
+            print("Trying to Send Welocme mesage")
+            client.send(str.encode(messeage))
+
+    def WelcomeString(self,group_1, group_2):
+        s = "Welcome to Keyboard Spamming Battle Royale. \n" \
+            "Group 1:\n" \
+            "==\n"
+        for i in group_1:
+            s += i + "\n"
+        s += "Group 2:\n" \
+             "==\n"
+        for i in group_2:
+            s += i + "\n"
+        s += "Start pressing keys on your keyboard as fast as you can!!"
+        return s
+
+    def partition(self,list_in, n):
+        random.shuffle(list_in)
+        return [list_in[i::n] for i in range(n)]
 
 def UdpBrodcast():
     serverPort = 13117
@@ -94,6 +144,8 @@ def partition( list_in, n ):
     random.shuffle(list_in)
     return [list_in[i::n] for i in range(n)]
 
+
+
 def WelcomeString( group_1, group_2 ):
     s="Welcome to Keyboard Spamming Battle Royale. \n" \
       "Group 1:\n" \
@@ -114,8 +166,7 @@ def broadcast(dict,messeage):
 
 
 
-def start_server
 
-TCP_Connection()
+
 
 
