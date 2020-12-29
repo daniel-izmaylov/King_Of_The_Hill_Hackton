@@ -30,13 +30,11 @@ def open_tcp_client(port=13117,team_name="A"):
                 on_press=on_press,
                ) as listener:
             listener.join()
-
     def on_press(key):
         print('{0} pressed'.format(
             key))
-        clientSocket.sendall(str(key).encode())
+        clientSocket.send(str(key).encode())
         if start_time + 2 <= time.time(): #todo change 2 to 10
-            print("time Out")
             return False
 
     server_address=(('127.0.0.1',port))
@@ -46,7 +44,7 @@ def open_tcp_client(port=13117,team_name="A"):
     print("We are here")
     sentence=str.encode(team_name+"\n")
     # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.sendall(sentence)
+    clientSocket.send(sentence)
     print("We sent somting")
 
     # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
@@ -60,6 +58,14 @@ def open_tcp_client(port=13117,team_name="A"):
     print(recieve_from_server.decode())
     start_time=time.time()
     in_game()
+    print("blabla")
+    #while True:
+    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+    print("Stuck")
+        #if  recieve_from_server.decode()!="":
+         #   break  # no more data coming in, so break out of the while loop
+    print(recieve_from_server.decode())
+
     return
 
 
