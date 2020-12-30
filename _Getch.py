@@ -13,6 +13,7 @@ screen. From http://code.activestate.com/recipes/134892/"""
     def __call__(self): return self.impl()
 
 
+
 class _GetchUnix:
     def __init__(self):
         import tty, sys, termios # import termios now or else you'll get the Unix version on the Mac
