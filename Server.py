@@ -5,7 +5,7 @@ import sys
 import time
 from socket import *
 from threading import Thread, Lock
-
+import struct
 
 class Server:
     def __init__( self ): #todo: limit number of players
@@ -229,7 +229,9 @@ class Server:
         i = 1
         while i < 10:
             print("Any one want to play with me? ",str(i))
-            broadSockListe.sendto("2113".encode(), (('<broadcast>', 33333)))
+            m=struct.pack('I b h',0xfeedbeef,0x2,3333)
+
+            broadSockListe.sendto(m,('<broadcast>', 3333))
             time.sleep(1)
             i += 1
 

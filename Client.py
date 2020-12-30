@@ -1,7 +1,7 @@
 import time
 from socket import *
-
-from pynput.keyboard import Listener
+import struct
+#from pynput.keyboard import Listener
 
 
 class Client():
@@ -27,14 +27,23 @@ class Client():
             print ("Error creating socket: %s.creating a new one" %  socket.error)
         broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #SO_BROADCAST used to protectet the application from accidentally sending a datagram to many systems
         broadData = 8000
-        broadSock.bind(('', 33333))
+        broadSock.bind(('', 3333))
         while True:
             print("Looking for someone to play with")
-            try:
-                data, address = broadSock.recvfrom(1024)
-            except:
-                pass
-            return int((data.decode()))
+            # try:
+            data = broadSock.recvfrom(1024)
+            if (len(data) == 8):
+                m = struct.unpack("ibh",data)
+                print(str(m[0]))
+                print(str(m[1]))
+                print(str(m[2]))
+
+                if (int(m[0]) == 0xfeedbeef and int(m[1] == 0x2) and int(m[2] == 3333)):
+                    break
+            # except Exception as e:
+            #     print(e)
+
+        return int(m[2])
 
     def open_tcp_client( self, port=13117, team_name="A" ):
         def in_game():
