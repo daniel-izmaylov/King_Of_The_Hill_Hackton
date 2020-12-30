@@ -95,6 +95,26 @@ class Server:
             s+="Group 2 wins!\n"
         ##todo add tie situation
         return s
+
+    def UdpBrodcast(self):
+
+        serverPort = 13117
+        serverSocket = socket(AF_INET, SOCK_DGRAM)
+        serverSocket.bind(('', serverPort))
+
+        cs = socket(AF_INET, SOCK_DGRAM)
+        cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        cs.sendto('This is a test', ('255.255.255.255', 54545))
+
+
+        print("Server started, listening on IP address 172.1.0.2117")
+        while 1:
+            message, clientAddress = serverSocket.recvfrom(2048)
+            modifiedMessage = message.upper()
+            serverSocket.sendto(modifiedMessage, clientAddress)
+        ##  self.start_server()
+
     def start_server(self):
         serverSocket = socket(AF_INET, SOCK_STREAM)
         serverSocket.setblocking(True)
@@ -109,7 +129,7 @@ class Server:
                 Thread(target=self.client_thread, args=(connectionSocket, ip, port)).start()
             except:
                 print("bb")
-
+     ##   serverSocket.close()
         return
 
     def broadcast(self,dict, messeage):

@@ -26,6 +26,8 @@ def open_udp_client():
 
 def open_tcp_client(port=13117,team_name="A"):
     def in_game():
+        listener=Listener(on_press=on_press())
+        listener.start()
         with Listener(
                 on_press=on_press,
                ) as listener:
@@ -60,11 +62,11 @@ def open_tcp_client(port=13117,team_name="A"):
     in_game()
     print("blabla")
     #while True:
-    recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    print("Stuck")
+   # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
+    #print("Stuck")
         #if  recieve_from_server.decode()!="":
          #   break  # no more data coming in, so break out of the while loop
-    print(recieve_from_server.decode())
+    #print(recieve_from_server.decode())
 
     return
 
