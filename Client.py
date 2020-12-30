@@ -30,7 +30,7 @@ class Client():
             data, address = broadSock.recvfrom(1024)
             return int((data.decode()))
 
-    def open_tcp_client( self, port=13117, team_name="A" ):
+    def open_tcp_client( self, port=13117, team_name="X Æ A-12" ):
         def in_game():
             with Listener(
                     on_press=on_press,
