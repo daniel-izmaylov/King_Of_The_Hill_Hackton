@@ -1,143 +1,155 @@
+# import socket
+import random
 import select
 import time
 from socket import *
-# import socket
-import random
-
 from threading import Thread, Lock
+
+
 class Server:
-    def __init__(self):
-        self.groups_dict={}
-        self.connection_dict={}
-        self.groups_list=[]
-        self.score_dict={"group_1":0, "group_2":0}
-        self.num_clients=0
-        self.num_clients_after_game=0
-        self.mutex_num_of_clients=Lock()
-        self.mutex_num_of_clients_after_game=Lock()
-        self.clean_game_num=0
-        self.mutex_groups_dict=Lock()
-        self.timer=0
-        self.mutex_partition=Lock()
-        self.partisionReady=False
-    def client_thread(self, conn, ip, port):
+    def __init__( self ): #todo: limit number of players
+        self.groups_dict = {}
+        self.connection_dict = {}
+        self.groups_list = []
+        self.score_dict = {"group_1": 0, "group_2": 0}
+        self.num_clients = 0
+        self.num_clients_after_game = 0
+        self.mutex_num_of_clients = Lock()
+        self.mutex_num_of_clients_after_game = Lock()
+        self.clean_game_num = 0
+        self.mutex_groups_dict = Lock()
+        self.timer = 0
+        self.mutex_partition = Lock()
+        self.partisionReady = False
+        self.number_Of_threads=0
+
+    def Run( self ):
+        while True:
+            self.UdpBrodcast()
+            self.start_Tcp_server()
+
+    def client_thread( self, conn ):
         # self.mutex_num_of_clients.locked()
-        with self.mutex_num_of_clients:
-            client_number=-1
-            if(self.num_clients==0):
-                self.num_clients+=1
-                self.timer = time.time() + 2  # TODO: change it back to 10 sec
-                client_number=0
-            sentence = conn.recv(1024)
-            self.groups_list.append(sentence.decode().strip())
-            self.connection_dict[conn] = sentence.decode().strip()
+        with self.mutex_num_of_clients:  # todo: fix racecondising
+            client_number = -1
+            if (self.num_clients == 0):
+                # self.timer = time.time() + 10  # TODO: change it back to 10 sec
+                client_number = 0
+            self.num_clients += 1
+            group_name = conn.recv(1024)
+            self.groups_list.append(group_name.decode().strip())
+            self.connection_dict[conn] = group_name.decode().strip()
 
-       # self.mutex_num_of_clients.unlocked()
-        time.sleep(self.timer-time.time())
+        while not (self.num_clients == self.number_Of_threads):
+            print("Waiting for all to connect {}/{}".format(str(self.num_clients), str(self.number_Of_threads)))
+            print("num_clients", self.num_clients)
+            print("n_threads", self.number_Of_threads)
+            print("f1")
 
-
-        if(client_number==0):
+        if (client_number == 0):
             group_1, group_2 = self.partition(self.groups_list, 2)
             self.groups_dict["group_1"] = group_1
             self.groups_dict["group_2"] = group_2
-            self.partisionReady=True
+            self.partisionReady = True
 
         while not self.partisionReady:
             print("f")
 
-        WS = self.WelcomeString(self.groups_dict["group_1"] , self.groups_dict["group_2"])
+        WS = self.WelcomeString(self.groups_dict["group_1"], self.groups_dict["group_2"])
         conn.send(str.encode(WS))
 
-        ready = select.select([conn], [], [], 2)  # TODO: CHANGE TO 10
-        end_time=time.time()+2  #TODO: change it to 10
-        counter=0
-        while time.time()< end_time:
-            if ready[0]:
-                sentence = conn.recv(1024)
-                if(sentence.decode()!=''):
-                    counter+=1
-                    print("We Recived:", str(sentence.decode()))
-                    continue
+        # ready = select.select([conn], [], [], 2)  # TODO: CHANGE TO 10
+        ready = select.select([conn], [], [])  # TODO: CHANGE TO 10
+        end_time = time.time() + 10  # TODO: change it to 10
+        counter = 0
+        # setblocking(1)
+        conn.settimeout(10)  # TODO: change it to 1
+        try:
+            while time.time() < end_time:
+                if ready[0]:
+                    sentence = conn.recv(1024)
+                    if (sentence.decode() != ''):
+                        counter += 1
+                        print("We Recived from ", group_name, str(sentence.decode()))
+        except timeout:
+            print("The Time is Ended")
         print(counter)
+
         with self.mutex_num_of_clients:
-            self.calculate_score(conn,counter)
-            self.num_clients_after_game+=1
-        bool=False
-        while(True):
-            if(self.num_clients_after_game==self.num_clients):
+            self.calculate_score(conn, counter)
+            self.num_clients_after_game += 1
+
+        while True:
+            if self.num_clients_after_game == self.num_clients:
                 break
-        print("Server"+self.sendResults())
-        conn.send(str.encode(self.sendResults()))
-        self.groups_dict={}
+        if (client_number == 0):
+            print("Server" + self.MakeResults())
+
+        conn.send(str.encode(self.MakeResults()))
+        self.groups_dict = {}
         self.connection_dict = {}
+        self.score_dict = {"group_1": 0, "group_2": 0}
         self.groups_list = []
         self.num_clients = 0
+        self.num_clients_after_game=0
         self.timer = 0
         self.partisionReady = False
-        #todo print game over
+        print("end")
+        # todo print game over
+        self.number_Of_threads=0
         return
-    def calculate_score(self,conn,counter):
-        team_name=self.connection_dict[conn]
-      #  self.score_dict={"group_1":0, "group_2":0}
 
-        if(team_name in self.groups_dict["group_1"]):
-            self.score_dict["group_1"]+=counter
+    def calculate_score( self, conn, counter ): # why dead lock?!?
+        team_name = self.connection_dict[conn]
+        if (team_name in self.groups_dict["group_1"]):
+            print("In grup 1")
+            self.score_dict["group_1"] += counter
         else:
-            self.score_dict["group_2"]+=counter
+            print("In grup 2")
+            self.score_dict["group_2"] += counter
 
-    def sendResults(self):
+    def MakeResults( self ):
         s = "Game over!\n" \
-            "Group 1 typed in:"+str(self.score_dict["group_1"]) +"characters.\n"
-        s+="Group 2 typed in:"+str(self.score_dict["group_2"]) +"characters.\n"
-        if(self.score_dict["group_1"]>self.score_dict["group_2"]):
-            s+="Group 1 wins!\n"
+            "Group 1 typed in: " + str(self.score_dict["group_1"]) + " characters.\n"
+        s += "Group 2 typed in: " + str(self.score_dict["group_2"]) + " characters.\n"
+        if (self.score_dict["group_1"] > self.score_dict["group_2"]):
+            s += "Group 1 wins!\n"
         else:
-            s+="Group 2 wins!\n"
+            s += "Group 2 wins!\n"
         ##todo add tie situation
         return s
 
-    def UdpBrodcast(self):
-
-        serverPort = 13117
-        serverSocket = socket(AF_INET, SOCK_DGRAM)
-        serverSocket.bind(('', serverPort))
-
-        cs = socket(AF_INET, SOCK_DGRAM)
-        cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        cs.sendto('This is a test', ('255.255.255.255', 54545))
-
-
-        print("Server started, listening on IP address 172.1.0.2117")
-        while 1:
-            message, clientAddress = serverSocket.recvfrom(2048)
-            modifiedMessage = message.upper()
-            serverSocket.sendto(modifiedMessage, clientAddress)
-        ##  self.start_server()
-
-    def start_server(self):
+    def start_Tcp_server( self ):
         serverSocket = socket(AF_INET, SOCK_STREAM)
         serverSocket.setblocking(True)
-        serverPort = 13117
+        serverPort = 2113
         serverSocket.bind(('', serverPort))
         serverSocket.listen()
-        while True:
-            connectionSocket, addr = serverSocket.accept()
-            ip, port = str(addr[0]), str(addr[1])
+        Threads = []
+        serverSocket.settimeout(4)
 
-            try:
-                Thread(target=self.client_thread, args=(connectionSocket, ip, port)).start()
-            except:
-                print("bb")
-     ##   serverSocket.close()
-        return
+        try:
+            while True:
+                connectionSocket, addr = serverSocket.accept()
+                Threads.append(Thread(target=self.client_thread, args=(connectionSocket,)))
+                self.number_Of_threads+=1
 
-    def broadcast(self,dict, messeage):
+        except timeout:
+            print("Starting Game with {} players".format(self.number_Of_threads))
+        for x in Threads:
+            x.start()
+        for x in Threads:
+            x.join()
+
+        self.number_Of_threads=0
+
+
+    def broadcast( self, dict, messeage ):
         for client in dict.keys():
             print("Trying to Send Welocme mesage")
             client.send(str.encode(messeage))
 
-    def WelcomeString(self,group_1, group_2):
+    def WelcomeString( self, group_1, group_2 ):
         s = "Welcome to Keyboard Spamming Battle Royale. \n" \
             "Group 1:\n" \
             "==\n"
@@ -150,36 +162,27 @@ class Server:
         s += "Start pressing keys on your keyboard as fast as you can!!"
         return s
 
-    def partition(self,list_in, n):
+    def partition( self, list_in, n ):
         random.shuffle(list_in)
         return [list_in[i::n] for i in range(n)]
 
+    def UdpBrodcast( self ):
+        broadSockListe = socket(AF_INET, SOCK_DGRAM)
+        broadSockListe.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        broadSockListe.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        print("Starting to broadcast over IP ")
+        i = 1
+        while i < 10:
+            print("Any one want to play with me? ",str(i))
+            broadSockListe.sendto("2113".encode(), (('<broadcast>', 33333)))
+            time.sleep(1)
+            i += 1
 
 
-
-
-
-
-
-
-
-
-s=Server()
-s.start_server()
-
-
-
-
-def UdpBrodcast():
-    serverPort = 13117
-    serverSocket = socket(AF_INET, SOCK_DGRAM)
-    serverSocket.bind(('', serverPort))
-    print("Server started, listening on IP address 172.1.0.2117")
-    while 1:
-        message, clientAddress = serverSocket.recvfrom(2048)
-        modifiedMessage = message.upper()
-        serverSocket.sendto(modifiedMessage, clientAddress)
-        time.sleep(1)
+if __name__ == '__main__':
+    s = Server()
+    s.Run()
+    # UdpBrodcast()
 
 #
 # def TCP_Connection():
@@ -249,11 +252,11 @@ def UdpBrodcast():
 #
 
 
-    # while time.time()<End_time:
-    #     connectionSocket, addr = serverSocket.accept()
-    #     sentence = connectionSocket.recv(1024)
-    #     score_dict[connection_dict[connectionSocket]]+=1
-    # print("The Score is:",score_dict)
+# while time.time()<End_time:
+#     connectionSocket, addr = serverSocket.accept()
+#     sentence = connectionSocket.recv(1024)
+#     score_dict[connection_dict[connectionSocket]]+=1
+# print("The Score is:",score_dict)
 
 # def partition( list_in, n ):
 #     random.shuffle(list_in)
@@ -283,5 +286,3 @@ def UdpBrodcast():
 #
 #
 #
-
-

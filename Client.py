@@ -1,115 +1,105 @@
-from socket import *
-from pynput.keyboard import Key, Listener
 import time
+from socket import *
+
+from pynput.keyboard import Listener
 
 
+class Client():
 
-def open_udp_client():
-    client_socket=socket(AF_INET,SOCK_DGRAM)
-    print("Client started, listening for offer requests...")
-    ip = '127.1.0.4' #the server ip
-    port=13117 # the server address
-    tmp= (ip,port)
-    # message=str.encode("let me in")
-    message=str.encode("let me in")
-    # print(message)
-    # message=0101
-    client_socket.sendto(message,tmp)
-    # client_socket.sendto(message,ip,port)
-    print("Received offer from 172.1.0.4,attempting to connect...")
-    modifiedMessage,serverAddress=client_socket.recvfrom(2048) #port 2048 is for udp
-    print(modifiedMessage.decode())
-    client_socket.close()
-    return serverAddress
+    def Run( self ):
+        while True:
+            server_port = self.open_udp_client()
+            print(server_port)
+            self.open_tcp_client(server_port)
+            # b=input("Do  you Want another game? Y/N")
+            # if (b=="Y"):
+            #
+
+    def open_udp_client( self ):
+        broadSock = socket(AF_INET, SOCK_DGRAM)
+        broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        broadData = 8000
+        broadSock.bind(('', 33333))
+        while True:
+            print("Looking for someone to play with")
+            data, address = broadSock.recvfrom(1024)
+            return int((data.decode()))
+
+    def open_tcp_client( self, port=13117, team_name="A" ):
+        def in_game():
+            with Listener(
+                    on_press=on_press,
+                    timeout=2
+            ) as listener:
+                listener.join()
+
+        def on_press( key ):
+            if start_time + 15 <= time.time():  # todo change 2 to 10
+                return False
+            print('{0} pressed'.format(
+                key))
+            print("in")
+            clientSocket.send(str(key).encode())
+            print("out")
+
+            if (str(key) not in Pressed_keys):
+                Pressed_keys[str(key)] = 0
+            Pressed_keys[str(key)] += 1
+
+        print("Trying to connect to server started...")
+        print("******************")
+        print("Messages are traveling in light speed to make this game work")
+        print("******************")
+        Pressed_keys = {}
+        server_address = (('127.0.0.1', port))
+        # server_address=('127.1.0.4',13117)
+        clientSocket = socket(AF_INET, SOCK_STREAM)
+        connected = False
+        i = 0
+        while not connected:
+            try:
+                clientSocket.connect(server_address)
+                connected = True
+            except ConnectionRefusedError:
+                if i == 10:
+                    print("We need to look for another Server")
+                    return
+                print("we need to wait for him")
+                time.sleep(1)
+                i += 1
+
+        print("Connected to server address: ", str(server_address))
+        sentence = str.encode(team_name + "\n")
+        clientSocket.send(sentence)
+        try: #TODO: TRY ALLLL
+            recieve_from_server = clientSocket.recv(1024)  ##port 1024 is for tcp
+        except ConnectionResetError:
+            print('Opps.... looks like the host disconcted')
+            return
+        print(recieve_from_server.decode())
+        start_time = time.time()
+        clientSocket.settimeout(10)
+        try:
+            in_game()
+        except timeout:
+            print("\n-=Times Up=-\n")
+
+        print("Good Job you Pressed {} Keys this game.".format(sum(Pressed_keys.values())))
+        print("The most frequent key pressed was:", max(Pressed_keys, key=lambda k: Pressed_keys[k]))
+        print("Waiting for Results...")
+        clientSocket.settimeout(10)
+
+        while (True):
+            recieve_from_server = clientSocket.recv(1024)
+            if (recieve_from_server != ""):
+                print(recieve_from_server.decode())
+                break
+            print("Stuck")
+
+        return
 
 
-
-def open_tcp_client(port=13117,team_name="A"):
-    def in_game():
-        listener=Listener(on_press=on_press())
-        listener.start()
-        with Listener(
-                on_press=on_press,
-               ) as listener:
-            listener.join()
-    def on_press(key):
-        print('{0} pressed'.format(
-            key))
-        clientSocket.send(str(key).encode())
-        if start_time + 2 <= time.time(): #todo change 2 to 10
-            return False
-
-    server_address=(('127.0.0.1',port))
-    # server_address=('127.1.0.4',13117)
-    clientSocket=socket(AF_INET,SOCK_STREAM)
-    clientSocket.connect(server_address)
-    print("We are here")
-    sentence=str.encode(team_name+"\n")
-    # sentence=str.encode("OFEK IS KING"+"\n")
-    clientSocket.send(sentence)
-    print("We sent somting")
-
-    # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    while True:
-        recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-        # print("Stuck")
-        if  recieve_from_server.decode()!="":
-            break  # no more data coming in, so break out of the while loop
-        # data.append(datachunk)  # add chunk to your already collected data
-
-    print(recieve_from_server.decode())
-    start_time=time.time()
-    in_game()
-    print("blabla")
-    #while True:
-   # recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-    #print("Stuck")
-        #if  recieve_from_server.decode()!="":
-         #   break  # no more data coming in, so break out of the while loop
-    #print(recieve_from_server.decode())
-
-    return
-
-
-
-
-
-
-
-
-#
-# def open_tcp_client2(port=13117,team_name="B"):
-#     server_address=('127.1.88.5',port)
-#     # server_address=('127.1.0.4',13117)
-#     clientSocket=socket(AF_INET,SOCK_STREAM)
-#     clientSocket.connect(server_address)
-#     sentence=str.encode(team_name+"\n")
-#     # sentence=str.encode("OFEK IS KING"+"\n")
-#     clientSocket.send(sentence)
-#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-#     # print(recieve_from_server)
-#
-# def open_tcp_client3(port=13117,team_name="C"):
-#     server_address=('127.1.88.5',port)
-#     # server_address=('127.1.0.4',13117)
-#     clientSocket=socket(AF_INET,SOCK_STREAM)
-#     clientSocket.connect(server_address)
-#     sentence=str.encode(team_name+"\n")
-#     # sentence=str.encode("OFEK IS KING"+"\n")
-#     clientSocket.send(sentence)
-#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-#     # print(recieve_from_server)
-#
-#
-# def open_tcp_client4(port=13117,team_name="D"):
-#     server_address=('127.1.88.5',port)
-#     # server_address=('127.1.0.4',13117)
-#     clientSocket=socket(AF_INET,SOCK_STREAM)
-#     clientSocket.connect(server_address)
-#     sentence=str.encode(team_name+"\n")
-#     # sentence=str.encode("OFEK IS KING"+"\n")
-#     clientSocket.send(sentence)
-#     recieve_from_server=clientSocket.recv(1024) ##port 1024 is for tcp
-#     # print(recieve_from_server)
-
-open_tcp_client()
+if __name__ == '__main__':
+    c = Client()
+    # open_tcp_client()
+    c.Run()
