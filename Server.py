@@ -172,6 +172,7 @@ class Server:
         broadSockListe.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         print("Starting to broadcast over IP ")
         i = 1
+        print('testtest')
         while i < 10:
             print("Any one want to play with me? ",str(i))
             broadSockListe.sendto("2113".encode(), (('<broadcast>', 33333)))
@@ -286,3 +287,4 @@ if __name__ == '__main__':
 #
 #
 #
+####test test test test

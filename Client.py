@@ -7,6 +7,11 @@ from pynput.keyboard import Listener
 class Client():
 
     def Run( self ):
+        '''
+        a wrapper function that runs the client side forever until manually stopped.
+        1.start a udp client that will recieve a port number.
+        2. start a tcp client with the port recieved in step 1.
+        '''
         while True:
             server_port = self.open_udp_client()
             print(server_port)
@@ -17,7 +22,7 @@ class Client():
 
     def open_udp_client( self ):
         broadSock = socket(AF_INET, SOCK_DGRAM)
-        broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #SO_BROADCAST used to protectet the application from accidentally sending a datagram to many systems
         broadData = 8000
         broadSock.bind(('', 33333))
         while True:
