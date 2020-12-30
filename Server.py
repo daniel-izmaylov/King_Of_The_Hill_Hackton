@@ -57,7 +57,11 @@ class Server:
         for x in Threads:
             x.join()
 
+
+
+
         # init for new game
+        
         self.groups_dict = {}
         self.connection_dict = {}
         self.score_dict = {"group_1": 0, "group_2": 0}
@@ -72,16 +76,10 @@ class Server:
         self.number_Of_threads=0
 
     def client_thread( self, conn ):
-        # print(str(time.time()-self.start_time))
-        # time.sleep(int(round(time.time()-self.start_time)))
-        # self.mutex_num_of_clients.locked()
+
         conn.settimeout(10)  # TODO: change it to 1
 
         with self.mutex_num_of_clients:  # todo: fix racecondising
-            # client_number = -1
-            # if (self.num_clients == 0):
-            #     # self.timer = time.time() + 10  # TODO: change it back to 10 sec
-            #     client_number = 0
             id= self.num_concted_clients
             id+=1
             self.num_concted_clients += 1

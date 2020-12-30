@@ -142,14 +142,17 @@ class Client():
 
 
 
-    while True:
-        # try:
-            recieve_from_server = clientSocket.recv(1024)
-            print(recieve_from_server.decode())
-            print("\n\n")
-        # except  Exception as e:
-        #     print(e)
-        #     print("looks like the game results got lost somewhere..lets play again\n\n")
+        while True:
+            try:
+                recieve_from_server = clientSocket.recv(1024)
+                print(recieve_from_server.decode())
+                print("\n\n")
+                break
+            except  Exception as e:
+                print(e)
+                print("looks like the game results got lost somewhere..lets play again\n\n")
+                break
+
 
 
 
