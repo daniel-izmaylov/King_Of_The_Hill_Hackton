@@ -6,7 +6,7 @@ from pynput.keyboard import Listener
 
 class Client():
 
-    def Run( self ):
+    def Run( self,name="A" ):
         '''
         a wrapper function that runs the client side forever until manually stopped.
         1.start a udp client that will recieve a port number.
@@ -15,7 +15,7 @@ class Client():
         while True:
             server_port = self.open_udp_client()
             print(server_port)
-            self.open_tcp_client(server_port)
+            self.open_tcp_client(server_port,name)
             # b=input("Do  you Want another game? Y/N")
             # if (b=="Y"):
             #
@@ -50,7 +50,6 @@ class Client():
             print('{0} pressed'.format(
                 key))
             print("in")
-            i=0
             try:
                 clientSocket.send(str(key).encode())
                 print("out")
@@ -104,7 +103,7 @@ class Client():
                 if(counter==10):
                     print("error sending team name,starting a new game")
                     return
-        try: #TODO: TRY ALLLL
+        try:
             recieve_from_server = clientSocket.recv(1024)  ##port 1024 is for tcp
         except timeout:
                 print('Opps.... looks like the host disconcted')
@@ -119,20 +118,24 @@ class Client():
         except Exception as e:
             print(e)
             return
-        print("Good Job you Pressed {} Keys this game.".format(sum(Pressed_keys.values())))
-        print("The most frequent key pressed was:", max(Pressed_keys, key=lambda k: Pressed_keys[k]))
+        try:
+            print("Good Job you Pressed {} Keys this game.".format(sum(Pressed_keys.values())))
+            print("The most frequent key pressed was:", max(Pressed_keys, key=lambda k: Pressed_keys[k]))
+        except:
+            pass
         print("Waiting for Results...")
         clientSocket.settimeout(10)
 
-        print("waiting for game results.")
+
+
         try:
             recieve_from_server = clientSocket.recv(1024)
-        except socket.error:
-            print("looks like the game results got lost somewhere..lets play again")
+            print(recieve_from_server.decode())
+            print("\n\n")
+        except :
+            print("looks like the game results got lost somewhere..lets play again\n\n")
             return
 
-        if (recieve_from_server != ""):
-            print(recieve_from_server.decode())
 
 
 

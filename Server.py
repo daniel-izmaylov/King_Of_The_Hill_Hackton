@@ -1,6 +1,7 @@
 # import socket
 import random
 import select
+import sys
 import time
 from socket import *
 from threading import Thread, Lock
@@ -12,7 +13,7 @@ class Server:
         self.connection_dict = {}
         self.groups_list = []
         self.score_dict = {"group_1": 0, "group_2": 0}
-        self.num_clients = 0
+        self.num_concted_clients = 0
         self.num_clients_after_game = 0
         self.mutex_num_of_clients = Lock()
         self.mutex_num_of_clients_after_game = Lock()
@@ -22,43 +23,109 @@ class Server:
         self.mutex_partition = Lock()
         self.partisionReady = False
         self.number_Of_threads=0
+        self.start_time=0
 
     def Run( self ):
         while True:
             self.UdpBrodcast()
             self.start_Tcp_server()
 
+    def start_Tcp_server( self ):
+        serverSocket = socket(AF_INET, SOCK_STREAM)
+        serverSocket.setblocking(True)
+        serverPort = 2113
+        serverSocket.bind(('', serverPort))
+        serverSocket.listen()
+        Threads = []
+        serverSocket.settimeout(10)
+        self.start_time=time.time()+10
+        try:
+            while True:
+                connectionSocket, addr = serverSocket.accept()
+                Threads.append(Thread(target=self.client_thread, args=(connectionSocket,)))
+                self.number_Of_threads+=1
+
+        except timeout:
+            print("Starting Game with {} players".format(self.number_Of_threads))
+
+        for x in Threads:
+            x.start()
+        for x in Threads:
+            x.join()
+
+        # init for new game
+        self.groups_dict = {}
+        self.connection_dict = {}
+        self.score_dict = {"group_1": 0, "group_2": 0}
+        self.groups_list = []
+        self.num_concted_clients = 0
+        self.num_clients_after_game=0
+        self.timer = 0
+        self.partisionReady = False
+        print("\n\n-=Game Over=-\n\n"
+              "starting to look for new friends")
+        # todo print game over
+        self.number_Of_threads=0
+
     def client_thread( self, conn ):
+        # print(str(time.time()-self.start_time))
+        # time.sleep(int(round(time.time()-self.start_time)))
         # self.mutex_num_of_clients.locked()
+        conn.settimeout(10)  # TODO: change it to 1
+
         with self.mutex_num_of_clients:  # todo: fix racecondising
-            client_number = -1
-            if (self.num_clients == 0):
-                # self.timer = time.time() + 10  # TODO: change it back to 10 sec
-                client_number = 0
-            self.num_clients += 1
-            group_name = conn.recv(1024)
-            self.groups_list.append(group_name.decode().strip())
-            self.connection_dict[conn] = group_name.decode().strip()
+            # client_number = -1
+            # if (self.num_clients == 0):
+            #     # self.timer = time.time() + 10  # TODO: change it back to 10 sec
+            #     client_number = 0
+            id= self.num_concted_clients
+            id+=1
+            self.num_concted_clients += 1
+            try:
+                group_name = conn.recv(1024)
+                self.groups_list.append(group_name.decode().strip())
+                self.connection_dict[conn] = group_name.decode().strip()
 
-        while not (self.num_clients == self.number_Of_threads):
-            print("Waiting for all to connect {}/{}".format(str(self.num_clients), str(self.number_Of_threads)))
-            print("num_clients", self.num_clients)
-            print("n_threads", self.number_Of_threads)
-            print("f1")
+            except Exception as e :
+                print(e)
+                print("Player Disconnected... ")
+                self.number_Of_threads-=1
+                self.num_clients=-1
+                if (self.num_clients>0):
+                    print("Dont Worry we will play without him, We have {} more".format(str(self.num_clients)))
+                else:
+                    print("He was the last one, dont worrt we will find new friends")
+                    return
 
-        if (client_number == 0):
-            group_1, group_2 = self.partition(self.groups_list, 2)
-            self.groups_dict["group_1"] = group_1
-            self.groups_dict["group_2"] = group_2
-            self.partisionReady = True
+        while not (self.num_concted_clients == self.number_Of_threads):
+            print("Waiting for all to connect {}/{}".format(str(self.num_concted_clients), str(self.number_Of_threads)))
+            time.sleep(1)
+
+
 
         while not self.partisionReady:
-            print("f")
+            if id == self.num_concted_clients:
+                print("all player connected")
+                group_1, group_2 = self.partition(self.groups_list, 2)
+                self.groups_dict["group_1"] = group_1
+                self.groups_dict["group_2"] = group_2
+                self.partisionReady = True
 
         WS = self.WelcomeString(self.groups_dict["group_1"], self.groups_dict["group_2"])
-        conn.send(str.encode(WS))
+        try:
+            conn.send(str.encode(WS))
 
-        # ready = select.select([conn], [], [], 2)  # TODO: CHANGE TO 10
+        except Exception as e :
+            print(e)
+            print("Player Disconnected... ")
+            self.number_Of_threads-=1
+            self.num_clients=-1
+            if (self.num_clients>0):
+                print("Dont Worry we will play without him, We have {} more".format(str(self.num_clients)))
+            else:
+                print("He was the last one, dont worrt we will find new friends")
+                return
+
         ready = select.select([conn], [], [])  # TODO: CHANGE TO 10
         end_time = time.time() + 10  # TODO: change it to 10
         counter = 0
@@ -73,39 +140,49 @@ class Server:
                         print("We Recived from ", group_name, str(sentence.decode()))
         except timeout:
             print("The Time is Ended")
-        print(counter)
+
+        except Exception as e :
+            print(e)
+            print("Player Disconnected... ")
+            self.number_Of_threads-=1
+            self.num_clients=-1
+            if (self.num_clients>0):
+                print("Dont Worry we will play without him, We have {} more".format(str(self.num_clients)))
+            else:
+                print("He was the last one, dont worrt we will find new friends")
+                return
 
         with self.mutex_num_of_clients:
             self.calculate_score(conn, counter)
             self.num_clients_after_game += 1
 
         while True:
-            if self.num_clients_after_game == self.num_clients:
+            if self.num_clients_after_game == self.num_concted_clients:
                 break
-        if (client_number == 0):
-            print("Server" + self.MakeResults())
 
-        conn.send(str.encode(self.MakeResults()))
-        self.groups_dict = {}
-        self.connection_dict = {}
-        self.score_dict = {"group_1": 0, "group_2": 0}
-        self.groups_list = []
-        self.num_clients = 0
-        self.num_clients_after_game=0
-        self.timer = 0
-        self.partisionReady = False
-        print("end")
-        # todo print game over
-        self.number_Of_threads=0
+        #print for server
+        if id == self.num_concted_clients:
+            print( self.MakeResults())
+
+        conn.settimeout(15)  # TODO: change it to 1
+        while True:
+            try:
+                print("Sending Results to ",group_name.decode())
+                conn.send(str.encode(self.MakeResults()))
+                break
+            except timeout:
+                print("error couldn't send to ",group_name)
+                break
+
+        # except :
+        #     print("error couldn't send to ",group_name)
         return
 
     def calculate_score( self, conn, counter ): # why dead lock?!?
         team_name = self.connection_dict[conn]
         if (team_name in self.groups_dict["group_1"]):
-            print("In grup 1")
             self.score_dict["group_1"] += counter
         else:
-            print("In grup 2")
             self.score_dict["group_2"] += counter
 
     def MakeResults( self ):
@@ -119,29 +196,7 @@ class Server:
         ##todo add tie situation
         return s
 
-    def start_Tcp_server( self ):
-        serverSocket = socket(AF_INET, SOCK_STREAM)
-        serverSocket.setblocking(True)
-        serverPort = 2113
-        serverSocket.bind(('', serverPort))
-        serverSocket.listen()
-        Threads = []
-        serverSocket.settimeout(4)
 
-        try:
-            while True:
-                connectionSocket, addr = serverSocket.accept()
-                Threads.append(Thread(target=self.client_thread, args=(connectionSocket,)))
-                self.number_Of_threads+=1
-
-        except timeout:
-            print("Starting Game with {} players".format(self.number_Of_threads))
-        for x in Threads:
-            x.start()
-        for x in Threads:
-            x.join()
-
-        self.number_Of_threads=0
 
 
     def broadcast( self, dict, messeage ):
@@ -172,7 +227,6 @@ class Server:
         broadSockListe.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         print("Starting to broadcast over IP ")
         i = 1
-        print('testtest')
         while i < 10:
             print("Any one want to play with me? ",str(i))
             broadSockListe.sendto("2113".encode(), (('<broadcast>', 33333)))
