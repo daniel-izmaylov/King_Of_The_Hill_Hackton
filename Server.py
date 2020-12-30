@@ -5,6 +5,7 @@ import sys
 import time
 from socket import *
 from threading import Thread, Lock
+
 import struct
 
 class Server:
@@ -229,9 +230,8 @@ class Server:
         i = 1
         while i < 10:
             print("Any one want to play with me? ",str(i))
-            m=struct.pack('I b h',0xfeedbeef,0x2,3333)
-
-            broadSockListe.sendto(m,('<broadcast>', 3333))
+            message = struct.pack("Ibh",0xfeedbeef,0X2,2113)
+            broadSockListe.sendto(message,('<broadcast>', 3333))
             time.sleep(1)
             i += 1
 

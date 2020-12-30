@@ -28,24 +28,43 @@ class Client():
         broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #SO_BROADCAST used to protectet the application from accidentally sending a datagram to many systems
         broadData = 8000
         broadSock.bind(('', 3333))
+
+
+
+
+        #
+        # while True:
+        #     data, adrr= broadSock.recvfrom(1024)
+        #     if( len(data)==8):
+        #         data2 = struct.unpack("Ibh",data )
+        #         print("this is data  "+str(data2))
+        #         port=data2[2]
+        #         if(int(data2[0])==0xfeedbeef and int(data2[1]==0x2) and port==2133 ):
+        #             flag=False
+        #             print(" going on to the next stage-playing game!")
+        #             print(" this is good meassge received message: %s"%data2[0])
+        #
+
+
         while True:
             print("Looking for someone to play with")
             # try:
-            data = broadSock.recvfrom(1024)
-            if (len(data) == 8):
-                m = struct.unpack("ibh",data)
-                print(str(m[0]))
-                print(str(m[1]))
-                print(str(m[2]))
+            data, adrr= broadSock.recvfrom(1024)
+            try:
+                if (len(data) == 8):
+                    data2 = struct.unpack("Ibh",data )
+                    print("this is data  "+str(data2))
 
-                if (int(m[0]) == 0xfeedbeef and int(m[1] == 0x2) and int(m[2] == 3333)):
-                    break
-            # except Exception as e:
-            #     print(e)
+                if (int(data2[0]) == 0xfeedbeef and int(data2[1] == 0x2) and int(data2[2] == 2113)):
+                    port=data2[2]
+                    print("found server on port ", port)
+                    return port
+            except Exception as e:
+                print(e)
 
         return int(m[2])
 
-    def open_tcp_client( self, port=13117, team_name="A" ):
+    def open_tcp_client( self, port=2113, team_name="A" ):
         def in_game():
             with Listener(
                     on_press=on_press,
