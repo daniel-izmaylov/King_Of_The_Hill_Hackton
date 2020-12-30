@@ -5,7 +5,7 @@ import sys
 import time
 from socket import *
 from threading import Thread, Lock
-
+from Get_input import _Getch
 import struct
 
 class Server:
@@ -28,8 +28,11 @@ class Server:
 
     def Run( self ):
         while True:
-            self.UdpBrodcast()
-            self.start_Tcp_server()
+            try:
+                self.UdpBrodcast()
+                self.start_Tcp_server()
+            except:
+                pass
 
     def start_Tcp_server( self ):
         serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -226,15 +229,24 @@ class Server:
         broadSockListe = socket(AF_INET, SOCK_DGRAM)
         broadSockListe.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         broadSockListe.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        print("Starting to broadcast over IP ")
+        print("Starting to broadcast over UDP ")
         i = 1
         while i < 10:
             print("Any one want to play with me? ",str(i))
             message = struct.pack("Ibh",0xfeedbeef,0X2,2113)
-            broadSockListe.sendto(message,('<broadcast>', 3333))
+            broadSockListe.sendto(message,('<broadcast>', 13117))
             time.sleep(1)
             i += 1
 
+
+
+def getKey():
+    inkey = _Getch()
+    import sys
+    for i in range(100000000):
+        k=inkey()
+        if k!='':
+            return k
 
 if __name__ == '__main__':
     s = Server()
