@@ -15,14 +15,19 @@ class Client():
         2. start a tcp client with the port recieved in step 1.
         '''
         while True:
-            server_port = self.open_udp_client()
-            print(server_port)
-            self.open_tcp_client(server_port,name)
-            # b=input("Do  you Want another game? Y/N")
-            # if (b=="Y"):
-            #
+            try:
+                server_port = self.open_udp_client()
+                print(server_port)
+                self.open_tcp_client(server_port,name)
+            except Exception as e:
+                print(e)
+
+
 
     def open_udp_client(self):
+        """
+
+        """
         try:
             broadSock = socket(AF_INET, SOCK_DGRAM)
         except socket.error:
@@ -33,21 +38,19 @@ class Client():
         print("Looking for someone to play with")
 
         while True:
-            data, adrr= broadSock.recvfrom(1024)
+            packet, adrr= broadSock.recvfrom(1024)
             try:
-                if (len(data) == 8):
-                    data2 = struct.unpack("Ibh",data )
-                    print(data2)
+                if (len(packet) == 8):
+                    Message = struct.unpack("Ibh",packet )
+                    print(Message)
                     # print("this is data  "+str(data2))
 
-                if (int(data2[0]) == 0xfeedbeef and int(data2[1] == 0x2) and int(data2[2] == 2113)):
-                    port=data2[2]
+                if (int(Message[0]) == 0xfeedbeef and int(Message[1] == 0x2) and int(Message[2] == 2113)):
+                    port=Message[2]
                     print("Concting to server on port ", port)
                     return port
             except Exception as e:
                 print(e)
-
-        return int(m[2])
 
 
 
@@ -83,7 +86,7 @@ class Client():
                 if(counter==10):
                     print("starting a new game")
         connected = False
-        i = 0
+        i = -1
         while not connected:
             try:
                 clientSocket.connect(server_address)
@@ -117,41 +120,41 @@ class Client():
         end_time = time.time()+10
         clientSocket.settimeout(10)
 
-        try:
-            while time.time()<end_time:
+        while True:
+            try:
                 key=self.getKey()
                 clientSocket.send(str(key).encode())
                 print("You Pressd: ", key)
                 if (str(key) not in Pressed_keys):
                     Pressed_keys[str(key)] = 0
                 Pressed_keys[str(key)] += 1
-        except timeout:
-            print("\n-=Times Up=-\n")
-        except Exception as e:
-            print(e)
-            return
+            except timeout:
+                print("\n-=Times Up=-\n")
+                break
+            except Exception as e:
+                break
+
 
         print("\n-=Times Up=-\n")
         try:
+
             print("Good Job you Pressed {} Keys this game.".format(sum(Pressed_keys.values())))
             print("The most frequent key pressed was:", max(Pressed_keys, key=lambda k: Pressed_keys[k]))
-        except:
-            pass
-        print("Waiting for Results...")
+        except Exception as e:
+            print (e)
+
+        print("Waiting for Results...\n\n\n\n")
         clientSocket.settimeout(10)
+        # while True:
+        try:
+            recieve_from_server = clientSocket.recv(1024)
+            print(recieve_from_server.decode())
+            print("\n\n")
 
+        except  Exception as e:
+            print(e)
+            print("looks like the game results got lost somewhere..lets play again\n\n")
 
-
-        while True:
-            try:
-                recieve_from_server = clientSocket.recv(1024)
-                print(recieve_from_server.decode())
-                print("\n\n")
-                break
-            except  Exception as e:
-                print(e)
-                print("looks like the game results got lost somewhere..lets play again\n\n")
-                break
 
 
 
