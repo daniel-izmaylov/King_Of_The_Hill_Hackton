@@ -50,12 +50,12 @@ class Client():
                     Message = struct.unpack("Ibh",packet )
                     print(Message)
 
-                if (int(Message[0]) == 0xfeedbeef and int(Message[1] == 0x2) and int(Message[2] == 2113)): ##making sure we only accept packets with the correct format
-                    port=Message[2]
-                    self.tcp_ip_address=adrr[0] ##setting the ip address that will be used for the tcp client
-                    print(self.tcp_ip_address)
-                    print("Concting to server on port ", port)
-                    return port
+                    if (int(Message[0]) == 0xfeedbeef and int(Message[1] == 0x2) and int(Message[2] == 2113)): ##making sure we only accept packets with the correct format
+                        port=Message[2]
+                        self.tcp_ip_address=adrr[0] ##setting the ip address that will be used for the tcp client
+                        print(self.tcp_ip_address)
+                        print("Concting to server on port ", port)
+                        return port
             except Exception as e:
                 print(e)
 
@@ -72,14 +72,14 @@ class Client():
 
 
 
-    def open_tcp_client( self, port=2113, team_name="A"):
+    def open_tcp_client( self, port=2113, team_name="Cicada 3301"):
         """
                starting a tcp client so the player can play the game
         """
-        print("Trying to connect to server started...")
-        print("******************")
+        print("Trying to connect to server started...\n\n")
+        print("*******************************************")
         print("Messages are traveling in light speed to make this game work")
-        print("******************")
+        print("*******************************************")
         Pressed_keys = {}
         counter=0
         server_address = ((self.tcp_ip_address, port))
