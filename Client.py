@@ -9,12 +9,15 @@ from Get_input import _Getch
 class Client():
     def __init__(self,team_name):
         self.timeout=10
-        self.sleep=1
-        self.buffer=1024
+        self.buffer=2048
         self.counter_limit=10
         self.udp_client_listen_port=13117
         self.team_name=team_name
+        self.packet_size=8
+
         self.tcp_ip_address=0
+
+
     def Run(self):
         '''
         a wrapper function that runs the client side forever until manually stopped.
@@ -27,7 +30,8 @@ class Client():
                 print(server_port)
                 self.open_tcp_client(server_port,self.team_name)
             except Exception as e:
-                print(e)
+                time.sleep(1)
+                pass
 
 
 
@@ -40,24 +44,29 @@ class Client():
         except socket.error:
             print ("Error creating socket: %s.creating a new one" %  socket.error)
         broadSock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #SO_BROADCAST used to protectet the application from accidentally sending a datagram to many systems
-        broadSock.bind(('', self.udp_client_listen_port))
+        # broadSock.bind(('', self.udp_client_listen_port))
         print("Looking for someone to play with")
 
+
         while True:
+            broadSock.bind(('', self.udp_client_listen_port))
+
             packet, adrr= broadSock.recvfrom(self.buffer)
             try:
-                if (len(packet) == 8):
+                if (len(packet) == self.packet_size):
                     Message = struct.unpack("Ibh",packet )
                     print(Message)
 
                     if (int(Message[0]) == 0xfeedbeef and int(Message[1] == 0x2) and int(Message[2] == 2113)): ##making sure we only accept packets with the correct format
+                        #int(Message[2] == 2113) is for test purpose only the port of OUR server
                         port=Message[2]
-                        self.tcp_ip_address=adrr[0] ##setting the ip address that will be used for the tcp client
+                        self.tcp_ip_address=adrr[0] #setting the ip address that will be used for the tcp client
                         print(self.tcp_ip_address)
                         print("Concting to server on port ", port)
                         return port
             except Exception as e:
-                print(e)
+                time.sleep(1)
+
 
 
 
@@ -83,7 +92,6 @@ class Client():
         Pressed_keys = {}
         counter=0
         server_address = ((self.tcp_ip_address, port))
-        # server_address=('127.1.0.4',13117)
         while True:
             try:
                 clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -104,7 +112,7 @@ class Client():
                     print("We need to look for another Server")
                     return
                 print("we need to wait for him")
-                time.sleep(self.sleep)
+                time.sleep(1)
                 i += 1
 
         print("Connected to server address: ", str(server_address))
@@ -163,6 +171,9 @@ class Client():
 
 
 if __name__ == '__main__':
-    c = Client("A")
-    # open_tcp_client()
+    name=input("Please enter name (press N for defult): ")
+    if(name=="N"):
+        c = Client("Cicada 3301")
+    else:
+        c = Client(name)
     c.Run()

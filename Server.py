@@ -17,6 +17,7 @@ class Server:
     def __init__( self ):
         self.Tcp_serverPort = 2113
         self.Udp_Brodcast_port=13117
+        self.buffer_size=2048
         self.Game_Time_limit = 10
         self.groups_dict = {}
         self.connection_dict = {}
@@ -42,7 +43,7 @@ class Server:
             try:
                 self.UdpBrodcast()
                 self.start_Tcp_server()
-                time.sleep(2)
+                time.sleep(1)
             except Exception as e:
                 print(e)
                 print("An error accrued but dont worry ALL IS UNDER CONTROL")
@@ -109,7 +110,7 @@ class Server:
             id += 1
             self.num_concted_clients += 1
             try:
-                group_name = conn.recv(1024)
+                group_name = conn.recv(self.buffer_size)
                 group_name=group_name.decode().strip()
                 self.groups_list.append(group_name)
                 self.connection_dict[conn] = group_name
@@ -143,10 +144,10 @@ class Server:
             conn.settimeout(self.Game_Time_limit)
             while time.time() < end_time:  # reading all the received keystrokes
                 if ready[0]:
-                    sentence = conn.recv(1024)
+                    sentence = conn.recv(self.buffer_size)
                     if sentence.decode() != '':
                         counter += 1
-                        print("We Received KeyStroke from", group_name, str(sentence.decode()))
+                        print("We Received {} KeyStroke from player '{}'".format(str(sentence.decode()),group_name))
         except timeout:
             print("The Time is Ended")
 
@@ -166,7 +167,7 @@ class Server:
         if id == self.num_concted_clients:
             print(self.MakeResults(group_name))
 
-        conn.settimeout(15)
+        conn.settimeout(self.Game_Time_limit)
         while True:
             try:
                 print("Sending Results to ", group_name)
@@ -208,18 +209,17 @@ class Server:
         self.total_groups_dict_score[group_name] += counter
 
     def MakeResults( self, team_name ):
-        s = "Game over!\n" \
+        s = "----------------Game over!----------------\n" \
             "Group 1 typed in: " + str(self.score_dict["group_1"]) + " characters.\n"
         s += "Group 2 typed in: " + str(self.score_dict["group_2"]) + " characters.\n"
-
-        s +="\n~~~~~~~~~~~~~~~~~~~The Winner is~~~~~~~~~~~~~~~~~~~\n"
+        s +="\n~~~~~~~~~~~~~~~~~~~~~The Winner is~~~~~~~~~~~~~~~~~~~~~\n"
         if (self.score_dict["group_1"] > self.score_dict["group_2"]):
             s += "Group 1 wins!\n"
         elif (self.score_dict["group_1"] == self.score_dict["group_2"]):
             s += "It is a tie.. what are the odds of that happening???? !\n"
         else:
             s += "Group 2 wins!\n"
-        s += "the total keys you pressed so far:" + str(self.total_groups_dict_score[team_name])
+        s += "the total keys you pressed so far: " + str(self.total_groups_dict_score[team_name])
         return s
 
     def WelcomeString( self, group_1, group_2 ):
@@ -258,7 +258,7 @@ class Server:
         broadSockListe.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         print("Starting to broadcast over UDP ")
         i = 1
-        while i < 10:
+        while i < 10: #TODO: change to varable name
             print("Any one want to play with me? ", str(i))
             message = struct.pack("Ibh", 0xfeedbeef, 0X2, self.Tcp_serverPort)
             broadSockListe.sendto(message, ('<broadcast>', self.Udp_Brodcast_port))
